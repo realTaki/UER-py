@@ -6,7 +6,6 @@ import collections
 import unicodedata
 import six
 import regex as re
-import jieba
 
 class Tokenizer(object):
 
@@ -78,6 +77,8 @@ class SpaceTokenizer(Tokenizer):
 
 class CPMTokenizer(Tokenizer):
     def __init__(self, args, is_src=True):
+        if not (args.spm_model_path if is_src else args.tgt_spm_model_path):
+            raise ValueError("CPM tokenization requires a SentencePiece model.")
         super().__init__(args, is_src)
         # ↲　
         self.translator = str.maketrans(" ↲　", "\u2582\u2583\u2582")
@@ -89,19 +90,18 @@ class CPMTokenizer(Tokenizer):
 
     def tokenize(self, text):
         """ Tokenize a string. """
+        import jieba
+
         seg_list = [x.translate(self.translator) for x in jieba.cut(text, cut_all=False)]
         new_seg = " ".join(seg_list)
 
         return self.sp_model.encode(new_seg, out_type=str)
-   
-    # def encode(self, text):
-    #     res = self.tokenize(text)
-    #     return res
 
-    # def decode(self, tokens):
-    #     text = self.sp.decode(tokens)
-    #     text = text.replace(' ', '').translate(self.translator)
-    #     return text
+    def convert_tokens_to_ids(self, tokens):
+        return [self.vocab.get(token, self.vocab[UNK_TOKEN]) for token in tokens]
+
+    def convert_ids_to_tokens(self, ids):
+        return [self.inv_vocab[id_] for id_ in ids]
 
 
 SPIECE_UNDERLINE = u"▁".encode("utf-8")

@@ -16,11 +16,10 @@ class MultiHeadedAttention(nn.Module):
         self.per_head_size = attention_head_size
         self.with_scale = with_scale
         self.inner_hidden_size = heads_num * attention_head_size
-
         self.linear_layers = nn.ModuleList(
-                [nn.Linear(hidden_size, self.inner_hidden_size, bias=has_bias) for _ in range(3)]
-            )
-        
+            [nn.Linear(hidden_size, self.inner_hidden_size, bias=has_bias) for _ in range(3)]
+        )
+
         self.dropout = nn.Dropout(dropout)
         self.final_linear = nn.Linear(self.inner_hidden_size, hidden_size, bias=has_bias)
 
@@ -69,7 +68,8 @@ class MultiHeadedAttention(nn.Module):
             if prev_attn is not None:
                 scores += prev_attn
             prev_attn_out = scores
-        probs = nn.Softmax(dim=-1)(scores)
+        # probs = nn.Softmax(dim=-1)(scores)
+        probs = nn.functional.softmax(scores, dim=-1, dtype=torch.float32).to(query.dtype)
         probs = self.dropout(probs)
         output = unshape(torch.matmul(probs, value))
         output = self.final_linear(output)

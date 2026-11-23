@@ -1,5 +1,7 @@
 [**English**](https://github.com/dbiir/UER-py) | [**中文**](https://github.com/dbiir/UER-py/blob/master/README_ZH.md) 
 
+> **`aijiajia`** 是中文文本生成实验分支。诗歌数据处理和训练入口见 [分支笔记](step_by_step.txt)、`process*.bash` 和 `train-*.bash`。完整训练需要自备语料和模型权重；下方上游示例中的部分数据和脚本未保留在此分支。
+
 [![Build Status](https://github.com/dbiir/UER-py/actions/workflows/github-actions.yml/badge.svg)](https://github.com/dbiir/UER-py/actions/workflows/github-actions.yml)
 [![codebeat badge](https://codebeat.co/badges/f75fab90-6d00-44b4-bb42-d19067400243)](https://codebeat.co/projects/github-com-dbiir-uer-py-master)
 ![](https://img.shields.io/badge/license-MIT-000000.svg)
@@ -7,7 +9,13 @@
 
 <img src="logo.jpg" width="390" hegiht="390" align=left />
 
-预训练已经成为自然语言处理任务的重要组成部分，为大量自然语言处理任务带来了显著提升。UER-py（Universal Encoder Representations）是一个用于对通用语料进行预训练并对下游任务进行微调的工具包。UER-py遵循模块化的设计原则。通过模块的组合，用户能迅速精准的复现已有的预训练模型，并利用已有的接口进一步开发更多的预训练模型。通过UER-py，我们建立了一个模型仓库，其中包含不同性质的预训练模型（例如基于不同编码器和目标任务）。用户可以根据具体任务的要求，从中选择合适的预训练模型使用。**[完整文档](https://github.com/dbiir/UER-py/wiki/主页)请参见本项目Wiki**。
+预训练已经成为自然语言处理任务的重要组成部分，为大量自然语言处理任务带来了显著提升。UER-py（Universal Encoder Representations）是一个用于对通用语料进行预训练并对下游任务进行微调的工具包。UER-py遵循模块化的设计原则。通过模块的组合，用户能迅速精准的复现已有的预训练模型，并利用已有的接口进一步开发更多的预训练模型。通过UER-py，我们建立了一个模型仓库，其中包含不同性质的预训练模型（例如基于不同语料、编码器、目标任务）。用户可以根据具体任务的要求，从中选择合适的预训练模型使用。**完整文档请参见[本项目Wiki]((https://github.com/dbiir/UER-py/wiki/主页))**。
+
+
+<br>
+<br>
+
+**🚀** 我们在UER-py基础上开发了[TencentPretrain](https://github.com/Tencent/TencentPretrain)。TencentPretrain支持多模态模型和大模型训练。如果只关注中等规模的文本模型（参数量小于十亿），建议继续使用UER-py项目。
 
 
 <br>
@@ -17,12 +25,12 @@
   * [项目特色](#项目特色)
   * [依赖环境](#依赖环境)
   * [快速上手](#快速上手)
-  * [数据集](#数据集)
+  * [预训练数据](#预训练数据)
+  * [下游任务数据集](#下游任务数据集)
   * [预训练模型仓库](#预训练模型仓库)
   * [使用说明](#使用说明)
   * [竞赛解决方案](#竞赛解决方案)
   * [引用](#引用)
-
 
 <br/>
 
@@ -30,10 +38,10 @@
 UER-py有如下几方面优势:
 - __可复现__ UER-py已在许多数据集上进行了测试，与原始预训练模型实现（例如BERT、GPT-2、ELMo、T5）的表现相匹配
 - __模块化__ UER-py使用解耦的模块化设计框架。框架分成Embedding、Encoder、Target等多个部分。各个部分之间有着清晰的接口并且每个部分包括了丰富的模块。可以对不同模块进行组合，构建出性质不同的预训练模型
-- __模型训练__ UER-py支持CPU、单机单GPU、单机多GPU、多机多GPU训练模式，并支持使用DeepSpeed优化库进行超大模型训练
-- __模型仓库__ 我们维护并持续发布预训练模型。用户可以根据具体任务的要求，从中选择合适的预训练模型使用
+- __模型训练__ UER-py支持单机CPU、单机GPU、多机多GPU训练模式
+- __模型仓库__ 我们维护并发布预训练模型。用户可以根据具体任务的要求，从中选择合适的预训练模型使用
 - __SOTA结果__ UER-py支持全面的下游任务，包括文本分类、文本对分类、序列标注、阅读理解等，并提供了多个竞赛获胜解决方案
-- __预训练相关功能__ UER-py提供了丰富的预训练相关的功能和优化，包括特征抽取、近义词检索、预训练模型转换、模型集成、文本生成等
+- __预训练相关功能__ UER-py提供了丰富的预训练相关的功能，包括特征抽取、近义词检索、预训练模型转换、模型集成、文本生成等
 
 
 <br/>
@@ -45,19 +53,17 @@ UER-py有如下几方面优势:
 * argparse
 * packaging
 * regex
-* 如果使用混合精度，需要安装英伟达的apex
 * 如果涉及到TensorFlow模型的转换，需要安装TensorFlow
 * 如果在tokenizer中使用sentencepiece模型，需要安装[SentencePiece](https://github.com/google/sentencepiece)
 * 如果使用模型集成stacking，需要安装LightGBM和[BayesianOptimization](https://github.com/fmfn/BayesianOptimization)
 * 如果使用全词遮罩（whole word masking）预训练，需要安装分词工具，例如[jieba](https://github.com/fxsjy/jieba)
 * 如果在序列标注下游任务中使用CRF，需要安装[pytorch-crf](https://github.com/kmkurn/pytorch-crf)
-* 如果使用超大模型，需要安装[DeepSpeed](https://github.com/microsoft/DeepSpeed)
 
 
 <br/>
 
 ## 快速上手
-这里我们通过常用的例子来简要说明如何使用UER-py，更多的细节请参考使用说明章节。我们首先使用BERT模型和豆瓣书评分类数据集。我们在书评语料上对模型进行预训练，然后在书评分类数据集上对其进行微调。这个过程有三个输入文件：书评语料，书评分类数据集和中文词典。这些文件均为UTF-8编码，并被包括在这个项目中。
+这里我们通过常用的例子来简要说明如何使用UER-py，更多的细节请参考使用说明章节。我们首先使用文本预训练模型BERT和书评情感分类数据集。我们在书评语料上对模型进行预训练，然后在书评情感分类数据集上对其进行微调。这个过程有三个输入文件：书评语料，书评情感分类数据集和中文词典。这些文件均为UTF-8编码，并被包括在这个项目中。
 
 BERT模型要求的预训练语料格式是一行一个句子，不同文档使用空行分隔，如下所示：
 
@@ -71,7 +77,7 @@ doc2-sent1
 doc3-sent1
 doc3-sent2
 ```
-书评语料是由书评分类数据集去掉标签得到的。我们将一条评论从中间分开，从而形成一个两句话的文档，具体可见*corpora*文件夹中的*book_review_bert.txt*。
+书评语料是由书评情感分类数据集去掉标签得到的。我们将一条评论从中间分开，从而形成一个两句话的文档，具体可见*corpora*文件夹中的*book_review_bert.txt*。
 
 分类数据集的格式如下：
 ```
@@ -91,7 +97,7 @@ python3 preprocess.py --corpus_path corpora/book_review_bert.txt --vocab_path mo
 ```
 注意我们需要安装 *six>=1.12.0*。
 
-预处理非常耗时，使用多个进程可以大大加快预处理速度（*--processes_num*）。默认的分词器为 *--tokenizer bert* 。原始文本在预处理之后被转换为*pretrain.py*可以接收的输入，*dataset.pt*。然后下载Google中文预训练模型[*google_zh_model.bin*](https://share.weiyun.com/DHhfYBOH)（此文件为UER支持的格式，原始模型来自于[这里](https://github.com/google-research/bert)），并将其放在 *models* 文件夹中。接着加载Google中文预训练模型，在书评语料上对其进行增量预训练。预训练模型通常由词向量层，编码层和目标任务层组成。因此要构建预训练模型，我们应该给出这些信息，比如编码层使用什么类型的Encoder模块。这里我们通过配置文件（*--config_path*）指定模型使用的模块类型和超参数等信息。具体可见*models/bert/base_config.json*。假设我们有一台带有8个GPU的机器：
+预处理非常耗时，使用多个进程可以大大加快预处理速度（*--processes_num*）。默认的分词器为 *--tokenizer bert* 。原始文本在预处理之后被转换为*pretrain.py*可以接收的输入，*dataset.pt*。然后下载Google中文预训练模型[*google_zh_model.bin*](https://share.weiyun.com/FR4rPxc4)（此文件为UER支持的格式，原始模型来自于[这里](https://github.com/google-research/bert)），并将其放在 *models* 文件夹中。接着加载Google中文预训练模型，在书评语料上对其进行增量预训练。预训练模型通常由词向量层，编码层和目标任务层组成。因此要构建预训练模型，我们应该给出这些信息，比如编码层使用什么类型的Encoder模块。这里我们通过配置文件（*--config_path*）指定模型使用的模块类型和超参数等信息。具体可见*models/bert/base_config.json*。假设我们有一台带有8个GPU的机器：
 ```
 python3 pretrain.py --dataset_path dataset.pt --vocab_path models/google_zh_vocab.txt \
                     --pretrained_model_path models/google_zh_model.bin \
@@ -104,14 +110,14 @@ mv models/book_review_model.bin-5000 models/book_review_model.bin
 ```
 请注意，*pretrain.py*输出的模型会带有记录训练步数的后缀（*--total_steps*），这里我们可以删除后缀以方便使用。
 
-然后，我们在下游分类数据集上微调预训练模型，我们使用 *pretrain.py* 的输出[*book_review_model.bin*](https://share.weiyun.com/wDzMu0Rb)（加载词向量层和编码层参数）：
+然后，我们在下游分类数据集上微调预训练模型，我们使用 *pretrain.py* 的输出[*book_review_model.bin*](https://share.weiyun.com/PnxMrRwZ)（加载词向量层和编码层参数）：
 ```
 python3 finetune/run_classifier.py --pretrained_model_path models/book_review_model.bin \
                                    --vocab_path models/google_zh_vocab.txt \
                                    --config_path models/bert/base_config.json \
-                                   --train_path datasets/douban_book_review/train.tsv \
-                                   --dev_path datasets/douban_book_review/dev.tsv \
-                                   --test_path datasets/douban_book_review/test.tsv \
+                                   --train_path datasets/book_review/train.tsv \
+                                   --dev_path datasets/book_review/dev.tsv \
+                                   --test_path datasets/book_review/test.tsv \
                                    --epochs_num 3 --batch_size 32
 ``` 
 
@@ -120,8 +126,8 @@ python3 finetune/run_classifier.py --pretrained_model_path models/book_review_mo
 python3 inference/run_classifier_infer.py --load_model_path models/finetuned_model.bin \
                                           --vocab_path models/google_zh_vocab.txt \
                                           --config_path models/bert/base_config.json \
-                                          --test_path datasets/douban_book_review/test_nolabel.tsv \
-                                          --prediction_path datasets/douban_book_review/prediction.tsv \
+                                          --test_path datasets/book_review/test_nolabel.tsv \
+                                          --prediction_path datasets/book_review/prediction.tsv \
                                           --labels_num 2
 ```
 *--test_path* 指定需要预测的文件，文件需要包括text_a列；
@@ -134,13 +140,18 @@ python3 inference/run_classifier_infer.py --load_model_path models/finetuned_mod
 
 <br/>
 
-## 数据集
-我们收集了一系列 :arrow_right: [__下游任务数据集__](https://github.com/dbiir/UER-py/wiki/下游任务数据集) :arrow_left: 并将其转换为UER可以直接加载的格式。
+## 预训练数据
+我们提供了链接，指向一系列开源的 :arrow_right: [__预训练数据__](https://github.com/dbiir/UER-py/wiki/预训练数据) :arrow_left: 。UER可以直接加载这些预训练数据。
+
+<br/>
+
+## 下游任务数据集
+我们提供了链接，指向一系列开源的 :arrow_right: [__下游任务数据集__](https://github.com/dbiir/UER-py/wiki/下游任务数据集) :arrow_left: 。UER可以直接加载这些数据集。
 
 <br/>
 
 ## 预训练模型仓库
-借助UER-py，我们训练不同性质的预训练模型（例如基于不同语料、编码器、目标任务）。用户可以在 :arrow_right: [__预训练模型仓库__](https://github.com/dbiir/UER-py/wiki/预训练模型仓库) :arrow_left: 中找到各种性质的预训练模型以及它们对应的描述和下载链接。所有预训练模型都可以由UER-py直接加载。将来我们会发布更多的预训练模型。
+借助UER-py，我们训练不同性质的预训练模型（例如基于不同语料、编码器、目标任务）。用户可以在 :arrow_right: [__预训练模型仓库__](https://github.com/dbiir/UER-py/wiki/预训练模型仓库) :arrow_left: 中找到各种性质的预训练模型以及它们对应的描述和下载链接。所有预训练模型都可以由UER-py直接加载。
 
 <br/>
 

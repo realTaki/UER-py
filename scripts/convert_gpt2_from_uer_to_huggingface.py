@@ -1,5 +1,7 @@
 import argparse
 import collections
+import os
+import sys
 import torch
 
 
@@ -12,14 +14,17 @@ parser.add_argument("--layers_num", type=int, default=12)
 
 args = parser.parse_args()
 
-input_model = torch.load(args.input_model_path)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from uer.model_loader import upgrade_gpt_checkpoint
+
+input_model = upgrade_gpt_checkpoint(torch.load(args.input_model_path, map_location="cpu"))
 
 output_model = collections.OrderedDict()
 
 
-output_model["transformer.wte.weight"] = input_model["embedding.word_embedding.weight"]
-output_model["transformer.wpe.weight"] = input_model["embedding.position_embedding.weight"]
-max_position = input_model["embedding.position_embedding.weight"].shape[0]
+output_model["transformer.wte.weight"] = input_model["embedding.word.embedding.weight"]
+output_model["transformer.wpe.weight"] = input_model["embedding.pos.embedding.weight"]
+max_position = input_model["embedding.pos.embedding.weight"].shape[0]
 
 for i in range(args.layers_num):
     output_model["transformer.h." + str(i) + ".attn.bias"] = \
@@ -61,6 +66,6 @@ for i in range(args.layers_num):
 
 output_model["transformer.ln_f.weight"] = input_model["encoder.layer_norm.gamma"]
 output_model["transformer.ln_f.bias"] = input_model["encoder.layer_norm.beta"]
-output_model["lm_head.weight"] = input_model["embedding.word_embedding.weight"]
+output_model["lm_head.weight"] = input_model["target.lm.output_layer.weight"]
 
 torch.save(output_model, args.output_model_path)
